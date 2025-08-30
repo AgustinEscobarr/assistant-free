@@ -13,7 +13,7 @@ exports.handler = async (event, context) => {
 
     // Generar la respuesta con OpenAI
     const response = await openai.chat.completions.create({
-      model: "z-ai/glm-4.5-air:free", // Podés cambiar el modelo
+      model: "meta-llama/llama-3.3-8b-instruct:free", // Podés cambiar el modelo
       messages: [
         { role: "user", content: message },
       ],
