@@ -1,0 +1,6 @@
+[build]
+  publish = "frontend"      # Tu carpeta de HTML/JS
+  functions = "functions"   # Donde pusiste chat.js
+
+[dev]
+  functions = "functions"

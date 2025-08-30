@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente Virtual</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        h1 { text-align: center; margin-bottom: 30px; font-size: 24px; font-weight: 300; }
+        .voice-controls { display: flex; flex-direction: column; gap: 15px; margin-bottom: 30px; }
+        .btn {
+            padding: 15px 25px; border: none; border-radius: 50px;
+            font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-primary { background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4); }
+        .btn-secondary { background: linear-gradient(45deg, #74b9ff, #0984e3); color: white; }
+        .status {
+            text-align: center; margin: 20px 0; padding: 15px;
+            border-radius: 10px; background: rgba(255, 255, 255, 0.1);
+            min-height: 50px; display: flex; align-items: center; justify-content: center;
+        }
+        .transcript, .response {
+            background: rgba(255, 255, 255, 0.9); color: #333; padding: 20px;
+            border-radius: 10px; margin: 15px 0; min-height: 80px; max-height: 200px; overflow-y: auto;
+        }
+        .response { background: rgba(0, 0, 0, 0.3); color: white; }
+        .recording { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1);} 50% { transform: scale(1.05);} 100% { transform: scale(1);} }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Asistente Virtual</h1>
+
+        <div class="voice-controls">
+            <button class="btn btn-primary" id="startRecording">🎤 Iniciar Grabación</button>
+            <button class="btn btn-secondary" id="stopSpeaking" style="display: none;">🔇 Detener Audio</button>
+        </div>
+
+        <div class="status" id="status">Presiona el botón para comenzar</div>
+        
+        <div class="transcript" id="transcript" style="display: none;">
+            <strong>Tu pregunta:</strong><br>
+            <span id="transcriptText"></span>
+        </div>
+        
+        <div class="response" id="response" style="display: none;">
+            <strong>Respuesta del Asistente:</strong><br>
+            <span id="responseText"></span>
+        </div>
+    </div>
+
+    <script>
+        class VoiceAssistant {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+
+                this.initElements();
+                this.initSpeechRecognition();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.startBtn = document.getElementById('startRecording');
+                this.stopBtn = document.getElementById('stopSpeaking');
+                this.status = document.getElementById('status');
+                this.transcript = document.getElementById('transcript');
+                this.transcriptText = document.getElementById('transcriptText');
+                this.response = document.getElementById('response');
+                this.responseText = document.getElementById('responseText');
+            }
+
+            initSpeechRecognition() {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.status.textContent = '❌ Tu navegador no soporta reconocimiento de voz';
+                    this.startBtn.disabled = true;
+                    return;
+                }
+
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                this.recognition = new SpeechRecognition();
+                
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.lang = 'es-ES';
+
+                this.recognition.onstart = () => {
+                    this.isRecording = true;
+                    this.startBtn.textContent = '🎤 Escuchando...';
+                    this.startBtn.classList.add('recording');
+                    this.status.textContent = '🎤 Habla ahora...';
+                };
+
+                this.recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    this.transcriptText.textContent = transcript;
+                    this.transcript.style.display = 'block';
+                    this.status.textContent = '🤖 Procesando con tu API...';
+                    
+                    this.sendToAPI(transcript);
+                };
+
+                this.recognition.onerror = (event) => {
+                    this.status.textContent = `❌ Error: ${event.error}`;
+                    this.resetRecording();
+                };
+
+                this.recognition.onend = () => {
+                    this.resetRecording();
+                };
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => {
+                    if (!this.isRecording) {
+                        this.startRecording();
+                    }
+                });
+
+                this.stopBtn.addEventListener('click', () => {
+                    this.stopSpeaking();
+                });
+            }
+
+            startRecording() {
+                if (this.recognition) {
+                    this.recognition.start();
+                }
+            }
+
+            resetRecording() {
+                this.isRecording = false;
+                this.startBtn.textContent = '🎤 Iniciar Grabación';
+                this.startBtn.classList.remove('recording');
+                if (this.status.textContent.includes('Habla ahora') || this.status.textContent.includes('Error')) {
+                    this.status.textContent = 'Presiona el botón para comenzar';
+                }
+            }
+
+            async sendToAPI(text) {
+                try {
+                    const response = await fetch('/.netlify/functions/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: text })
+                    });
+
+                    if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
+
+                    const data = await response.json();
+                    const reply = this.limpiarParaTTS(data.reply);
+
+                    this.responseText.textContent = reply;
+                    this.response.style.display = 'block';
+                    this.status.textContent = '🔊 Reproduciendo respuesta...';
+
+                    this.speakText(reply);
+                } catch (error) {
+                    this.status.textContent = `❌ Error al conectar con la API: ${error.message}`;
+                }
+            }
+
+            limpiarParaTTS(texto) {
+                return texto
+                // Quitar **negritas** y *cursivas*
+                .replace(/\*\*(.*?)\*\*/g, "$1")
+                .replace(/\*(.*?)\*/g, "$1")
+                // Eliminar cualquier asterisco sobrante
+                .replace(/\*/g, "")
+                // Quitar títulos Markdown (#, ##, ### ...)
+                .replace(/^#+\s*/gm, "")
+                // Quitar separadores --- o ___
+                .replace(/^[-*_]{3,}$/gm, "")
+                // Quitar bloques de código `...`
+                .replace(/`{1,3}([^`]*)`{1,3}/g, "$1")
+                // Quitar emojis y símbolos que no sean letras, números, puntuación o espacios
+                .replace(/[^\p{L}\p{N}\p{P}\p{Z}]/gu, "")
+                // Reemplazar saltos de línea dobles por punto y espacio
+                .replace(/\n{2,}/g, ". ")
+                // Reemplazar saltos simples por espacio
+                .replace(/\n/g, " ")
+                // Normalizar espacios múltiples
+                .replace(/\s{2,}/g, " ")
+                 // Convertir guiones o viñetas en puntos suspensivos
+                .replace(/^\s*[-•]\s*/gm, "... ")
+                .trim();
+            }
+
+            speakText(text) {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = 'es-ES';
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1;
+                    
+                    utterance.onstart = () => { this.stopBtn.style.display = 'block'; };
+                    utterance.onend = () => {
+                        this.status.textContent = '✅ Completado. Presiona para otra consulta';
+                        this.stopBtn.style.display = 'none';
+                    };
+                    utterance.onerror = () => {
+                        this.status.textContent = '❌ Error al reproducir audio';
+                        this.stopBtn.style.display = 'none';
+                    };
+                    
+                    speechSynthesis.speak(utterance);
+                } else {
+                    this.status.textContent = '❌ Tu navegador no soporta síntesis de voz';
+                }
+            }
+
+            stopSpeaking() {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                    this.status.textContent = 'Audio detenido. Presiona para nueva consulta';
+                    this.stopBtn.style.display = 'none';
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => new VoiceAssistant());
+    </script>
+</body>
+</html>
