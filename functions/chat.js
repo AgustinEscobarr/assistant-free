@@ -26,7 +26,7 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ reply: response.choices[0].message.content[0].text }),
+      body: JSON.stringify({ reply: response.choices[0].message.content[1].text }),
     };
   } catch (error) {
     console.error(error);
