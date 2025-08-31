@@ -1,9 +1,14 @@
 // functions/chat.js
-const { OpenAI } = require("openai");
+//const { OpenAI } = require("openai");
+const { Mistral } = require('@mistralai/mistralai');
 
-const openai = new OpenAI({
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY,
+//   baseURL: process.env.OPENAI_BASE_URL,
+// });
+const mistral = new Mistral({
   apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
+  //baseURL: process.env.OPENAI_BASE_URL,
 });
 
 exports.handler = async (event, context) => {
@@ -12,8 +17,8 @@ exports.handler = async (event, context) => {
     const { message } = JSON.parse(event.body);
 
     // Generar la respuesta con OpenAI
-    const response = await openai.chat.completions.create({
-      model: "meta-llama/llama-3.3-8b-instruct:free", // Podés cambiar el modelo
+    const response = await mistral.chat.complete({
+      model: "magistral-small-2507", // Podés cambiar el modelo
       messages: [
         { role: "user", content: message },
       ],
@@ -21,7 +26,7 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ reply: response.choices[0].message.content }),
+      body: JSON.stringify({ reply: response.choices[0].message.content[0].text }),
     };
   } catch (error) {
     console.error(error);
