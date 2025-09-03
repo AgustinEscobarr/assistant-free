@@ -18,7 +18,7 @@ exports.handler = async (event, context) => {
 
     // Generar la respuesta con OpenAI
     const response = await mistral.chat.complete({
-      model: "magistral-small-2507", // Podés cambiar el modelo
+      model: "open-mistral-nemo", // Podés cambiar el modelo
       messages: [
         { role: "user", content: message },
       ],
