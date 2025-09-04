@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
 
     return {
       statusCode: 200,
-      body: assistantReply,
+      body: JSON.stringify({reply: assistantReply}),
     };
   } catch (error) {
     console.error(error);
