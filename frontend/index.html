@@ -167,7 +167,8 @@
                     if (!response.ok) throw new Error(`Error ${response.status}: ${response.statusText}`);
 
                     const data = await response.json();
-                    const reply = this.limpiarParaTTS(data.reply);
+                    console.log('----data----', JSON.stringify(data));
+                    const reply = this.limpiarParaTTS(data);
 
                     this.responseText.textContent = reply;
                     this.response.style.display = 'block';
