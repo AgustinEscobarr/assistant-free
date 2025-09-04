@@ -1,32 +1,35 @@
-// functions/chat.js
-//const { OpenAI } = require("openai");
+
 const { Mistral } = require('@mistralai/mistralai');
 
-// const openai = new OpenAI({
-//   apiKey: process.env.OPENAI_API_KEY,
-//   baseURL: process.env.OPENAI_BASE_URL,
-// });
+
 const mistral = new Mistral({
   apiKey: process.env.OPENAI_API_KEY,
-  //baseURL: process.env.OPENAI_BASE_URL,
 });
+
+const conversationHistory = {};
 
 exports.handler = async (event, context) => {
   try {
-    // Parseamos el body de la request
-    const { message } = JSON.parse(event.body);
+    const { message, userId = "default" } = JSON.parse(event.body);
 
-    // Generar la respuesta con OpenAI
+    if (!conversationHistory[userId]) {
+      conversationHistory[userId] = [
+        { role: "system", content: "Sé concreto con las respuestas, sin dar datos adicionales." },
+      ];
+    }
+    conversationHistory[userId].push({ role: "user", content: message });
     const response = await mistral.chat.complete({
       model: "open-mistral-nemo", // Podés cambiar el modelo
-      messages: [
-        { role: "user", content: message },
-      ],
+      messages: conversationHistory[userId],
     });
+
+    const assistantReply = response.choices[0].message.content;
+    conversationHistory[userId].push({ role: "assistant", content: assistantReply });
+
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ reply: response.choices[0].message.content[1].text }),
+      body: {reply: assistantReply},
     };
   } catch (error) {
     console.error(error);
